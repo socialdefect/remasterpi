@@ -1,0 +1,53 @@
+Using RemasterPi is quite simple since its made to be as easy as possible.
+
+	Configuration:
+
+		1) The first thing you want to do is run the initial system configuration. This takes care of your SD card partitions and basic system settings.
+		2) Next you need to set the default user mode, this can be set to 'easy' or 'expert'
+			- easy: Installs scripts without asking any questions
+			- expert: Asks the user for input when a script supports it. This enables you to slightly customize the scripts.
+		3) The RemasterPi update script will update the script directory to include the latest scripts
+		4) The Auto-Start Configuration can be disabled when you are finished customizing so the system will no longer start RemasterPi at boot
+
+	Scripts:
+
+		1) Before installing scripts it is wise to run a RemasterPi update first
+		2) All scripts include an info file which describes all features the script will install for you in detail
+
+
+
+
+
+
+	TODO:
+
+		*) Include a backup feature
+		*) Fix Bugs
+		*) Include feature requests
+
+
+	Licence:
+
+		Copyright (c) 2013, Arjan van Lent - Codejugglers All rights reserved.
+
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are met:
+    	* Redistributions of source code must retain the above copyright
+      	notice, this list of conditions and the following disclaimer.
+    	* Redistributions in binary form must reproduce the above copyright
+      	notice, this list of conditions and the following disclaimer in the
+      	documentation and/or other materials provided with the distribution.
+    	* Neither the name of the <organization> nor the
+      	names of its contributors may be used to endorse or promote products
+      	derived from this software without specific prior written permission.
+
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+	ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+	DISCLAIMED. IN NO EVENT SHALL Arjan van Lent or Codejugglers  BE LIABLE FOR ANY
+	DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

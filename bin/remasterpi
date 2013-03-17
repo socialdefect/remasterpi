@@ -1,0 +1,256 @@
+#!/bin/bash
+
+## Re-masterPi is a menu-based script that helps users to set-up a ######
+## custom RaspberryPi OS.				 ################
+############### By Arjan van Lent 2013 - Codejugglers.nl ################
+############################## BSD Licence ##############################
+
+## RemasterPi Base directory
+REMPI_HOME="/remasterpi"
+## RemasterPi Scripts directory
+REMPI_SCRIPTS="$REMPI_HOME/scripts"
+## RemasterPi Temp directory
+REMPI_TMP="$REMPI_HOME/tmp"
+
+## System PATH
+PATH="$REMPI_HOME/bin:$PATH"
+
+## Alias that includes the clear option to whiptail to clear screen on exit
+alias whiptail='whiptail --clear'
+
+## Include user configuration file
+## When there is no config file one will be created for easy mode
+if [ -f ~/.remasterpi.conf ] ; then
+	. ~/.remasterpi.conf
+else
+	echo "MODE=easy" > ~/.remasterpi.conf
+	. ~/.remasterpi.conf
+fi
+
+## Include Bashrc file
+. /remasterpi/conf/bashrc
+
+rempi_enable(){
+	if [ -f /etc/rc.local.orig ] ; then
+		echo 25
+	else
+		cp /etc/rc.local /etc/rc.local.orig
+		echo 25
+	fi
+
+	cp "$REMPI_HOME"/conf/rc-local.template /etc/rc.local
+	chmod +wx /etc/rc.local
+	echo 50
+
+	if [ -f /etc/inittab.orig ] ; then
+                echo 75
+        else
+                cp /etc/inittab /etc/inittab.orig
+                echo 75
+        fi
+
+	cp "$REMPI_HOME"/conf/inittab.template /etc/inittab
+	echo 100
+	sleep 2
+}
+
+rempi_disable(){
+	for i in 'inittab' 'rc.local' ; do
+	percent=0
+	if [ -f /etc/$i.orig ] ; then
+		cp /etc/$i.orig /etc/$i
+		percent=`expr $percent + 50`
+		echo $percent
+		sleep 1
+	else
+		echo 10
+	fi
+	sleep 2
+	done
+}
+
+rempi_mode(){
+	SELECTION=$(whiptail --menu "RemasterPi UserMode Configuration" --notags 20 80 12 --cancel-button Back --ok-button Select \
+	'easy' "Enable Easy Mode" \
+	'expert' "Enable Expert Mode" \
+	'exit 0' "Quit"  3>&1 1>&2 2>&3)
+
+	if [ "$SELECTION" != 'exit 0' ] ; then
+		echo "MODE=$SELECTION" > ~/.remasterpi.conf
+		. ~/.remasterpi.conf
+		whiptail --title 'RemasterPi UserMode Configuration' --msgbox "UserMode set to: $SELECTION" 20 80
+	else
+		$SELECTION
+	fi
+}
+
+rempi_startup(){
+        SELECTION=$(whiptail --menu "RemasterPi Auto-Start Configuration" --notags 20 80 12 --cancel-button Back --ok-button Select \
+        'rempi_enable' "Enable RemasterPi Auto-Start" \
+        'rempi_disable' "Disable RemasterPi Auto-Start" \
+        'exit 0' "Quit"  3>&1 1>&2 2>&3)
+
+	if [ $? = 1 ] ; then
+                exit 0
+        else
+                $SELECTION | whiptail --gauge 'Please Wait' 5 50 0
+        fi
+}
+
+rempi_update(){
+	rempi_git_update(){
+	cd /usr/src/
+	echo 10
+	if [ -d remasterpi-code ] ; then
+		cd remasterpi-code
+		git pull
+		ERR="$?"
+	else
+		git clone git://git.code.sf.net/p/remasterpi/code remasterpi-code
+		ERR="$?"
+	fi
+	if [ $ERR != 0 ] ; then
+		whiptail --title 'RemasterPi Updater' --msgbox 'Update Failed!!!! Try again later....' 20 80
+		exit 1
+	fi
+	echo 50
+	cp -R /usr/src/remasterpi-code /remasterpi
+	if [ $? != 0 ] ; then
+                whiptail --title 'RemasterPi Updater' --msgbox 'Update Failed!!!! Try again later....' $
+                exit 1
+        fi
+	echo 99
+	sleep 2
+	echo 100
+	}
+	rempi_git_update | whiptail --gauge 'Please Wait' 5 50 0
+	whiptail --title 'RemasterPi Updater' --msgbox 'RemasterPi Updated to latest version' 20 80
+	exit 0 &
+	$0
+}
+
+update_scripts(){
+        whiptail --title 'RemasterPi Documentation' --msgbox 'Feature not yet implemented' 20 80
+}
+
+remasterpi-configure(){
+	SELECTION=$(whiptail --menu "RemasterPi Global Configuration" --notags 20 80 12 --cancel-button Back --ok-button Select \
+	'raspi-config' "Initial System Configuration" \
+	'rempi_mode' "RemasterPi User Mode" \
+	'rempi_startup' "RemasterPi Startup Configuration" \
+	'rempi_update' "Update the RemasterPi software" \
+	'update_scripts' "Update the RemasterPi Scripts directory" \
+	'exit 0' "Quit"  3>&1 1>&2 2>&3)
+
+	if [ $? = 1 ] ; then
+                exit 0
+        else
+                $SELECTION
+        fi
+}
+
+remasterpi-help(){
+	HELPTEXT=`cat "$REMPI_HOME/doc/help.txt"`
+	whiptail --title 'RemasterPi Documentation' --scrolltext --msgbox "$HELPTEXT" 20 80
+}
+
+main_menu(){
+	SELECTION=$(whiptail --menu "RemasterPi Main Menu" --notags 20 80 12 --cancel-button Exit  --ok-button Select \
+	'remasterpi-configure' "Configure RemasterPi" \
+	'dynamic_menu' "RemasterPi Scripts" \
+	'remasterpi-help' "Show Documentation" \
+	'exit 0' "Quit"  3>&1 1>&2 2>&3)
+
+	if [ $? = 1 ] ; then
+		exit 0
+	else
+		$SELECTION
+	fi
+}
+
+make_list(){
+	LIST=''
+	for items in `ls "$SCRIPTDIR"/` ; do
+		LIST="$LIST $items $items"
+	done
+# Set static menu items
+#	LIST="$LIST "cd $PREVDIR" Back 'main_menu' "Main Menu" 'exit 0' Quit"
+	echo "$LIST" > $REMPI_HOME/tmp/dynamic_menu.txt
+}
+
+
+
+dynamic_menu(){
+        MENUTXT="RemasterPi Scripts"
+	if [ -f "$REMPI_TMP"/prevdir ] ; then
+	        SCRIPTDIR=`cat "$REMPI_TMP"/prevdir`
+		MENUTXT="$MENUTXT - `cat $REMPI_TMP/name`"
+		rm "$REMPI_TMP"/prevdir
+		rm "$REMPI_TMP"/name
+		cd "$SCRIPTDIR"/
+		SCRIPTDIR=`pwd`
+	else
+		SCRIPTDIR="$REMPI_SCRIPTS"
+	fi
+
+        SCRIPTDIR="$SCRIPTDIR" make_list
+        LIST=`cat $REMPI_HOME/tmp/dynamic_menu.txt`
+
+        cd "$SCRIPTDIR"
+	if [ -f ./install ] ; then
+		INSTALLTEXT=`cat ./info`
+                whiptail --title "RemasterPi Installer Info Text for $SELECTION" --no-button Back --yes-button Install --yesno "$INSTALLTEXT" 20 80
+	else
+        	SELECTION=$(whiptail --menu "$MENUTXT" 20 80 12 --notags --cancel-button Cancel --ok-button Select $LIST 3>&1 1>&2 2>&3)
+	fi
+
+        if [ $? = 1 ] ; then
+                exit 0
+        else
+
+		NAME="$SELECTION"
+               PREVDIR="$SCRIPTDIR"
+               cd "$SELECTION"
+               SCRIPTDIR=`pwd` make_list
+               SELECTION=$(whiptail --menu "$MENUTXT - $SELECTION" 20 80 12 --notags --cancel-button Cancel --ok-button Select $LIST 3>&1 1>&2 2>&3)
+		PREVDIR=`pwd`
+		cd $SELECTION
+		SCRIPTDIR=`pwd` make_list
+
+                if [ -f ./install ] ; then
+                       INSTALLTEXT=`cat ./info`
+                       whiptail --title "RemasterPi Installer Info Text for $SELECTION" --no-button Back --yes-button Install --yesno "$INSTALLTEXT" 20 80
+			if [ $? = 0 ] ; then
+				rempi_script_installer(){
+				echo 5
+				./install
+				echo 100
+				sleep 2
+				}
+				rempi_script_installer | whiptail --gauge 'Please Wait' 5 50 0
+				STATUS=`cat "$REMPI_TMP"/status`
+				whiptail --title "Installation Finished" --no-button 'Back to Main Menu' --yes-button Reboot --yesno 'Do you want to reboot your Pi now?' 10 50
+				if [ $? = 0 ] ; then
+					### Remove remasterpi auto-start
+					/sbin/shutdown -r now
+				fi
+
+			elif [ $? = 1 ] ; then
+				echo "$PREVDIR" > "$REMPI_TMP"/prevdir
+				echo "$NAME" > "$REMPI_TMP"/name
+				dynamic_menu
+			fi
+		fi
+	fi
+}
+
+
+## Execute the main loop
+while true ; do
+	main_menu
+done
+
+
+rm -rf "$REMPI_HOME/tmp/*"
+
+exit 0
